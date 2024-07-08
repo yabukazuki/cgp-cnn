@@ -11,16 +11,20 @@ import cnn_train as cnn
 def arg_wrapper_mp(args):
     return args[0](*args[1:])
 
+
 class NoDaemonProcess(mp.Process):
     # make 'daemon' attribute always return False
     def _get_daemon(self):
         return False
+
     def _set_daemon(self, value):
         pass
     daemon = property(_get_daemon, _set_daemon)
 
 # We sub-class multiprocessing.pool.Pool instead of multiprocessing.Pool
 # because the latter is only a wrapper function, not a proper class.
+
+
 class NoDaemonProcessPool(multiprocessing.pool.Pool):
     Process = NoDaemonProcess
 
@@ -29,7 +33,8 @@ class NoDaemonProcessPool(multiprocessing.pool.Pool):
 def cnn_eval(net, gpu_id, epoch_num, batchsize, dataset, verbose, imgSize):
 
     print('\tgpu_id:', gpu_id, ',', net)
-    train = cnn.CNN_train(dataset, validation=True, verbose=verbose, imgSize=imgSize, batchsize=batchsize)
+    train = cnn.CNN_train(dataset, validation=True,
+                          verbose=verbose, imgSize=imgSize, batchsize=batchsize)
     evaluation = train(net, gpu_id, epoch_num=epoch_num, out_model=None)
     print('\tgpu_id:', gpu_id, ', eval:', evaluation)
     return evaluation
@@ -49,7 +54,8 @@ class CNNEvaluation(object):
         for i in np.arange(0, len(net_lists), self.gpu_num):
             process_num = np.min((i + self.gpu_num, len(net_lists))) - i
             pool = NoDaemonProcessPool(process_num)
-            arg_data = [(cnn_eval, net_lists[i+j], j, self.epoch_num, self.batchsize, self.dataset, self.verbose, self.imgSize) for j in range(process_num)]
+            arg_data = [(cnn_eval, net_lists[i+j], j, self.epoch_num, self.batchsize,
+                         self.dataset, self.verbose, self.imgSize) for j in range(process_num)]
             evaluations[i:i+process_num] = pool.map(arg_wrapper_mp, arg_data)
             pool.terminate()
 
@@ -63,20 +69,13 @@ class CgpInfoConvSet(object):
         # "S_" means that the layer has a convolution layer without downsampling.
         # "D_" means that the layer has a convolution layer with downsampling.
         # "Sum" means that the layer has a skip connection.
-        self.func_type = ['S_ConvBlock_32_1',    'S_ConvBlock_32_3',   'S_ConvBlock_32_5',
-                          'S_ConvBlock_128_1',    'S_ConvBlock_128_3',   'S_ConvBlock_128_5',
-                          'S_ConvBlock_64_1',     'S_ConvBlock_64_3',    'S_ConvBlock_64_5',
-                          'S_ResBlock_32_1',     'S_ResBlock_32_3',    'S_ResBlock_32_5',
-                          'S_ResBlock_128_1',     'S_ResBlock_128_3',    'S_ResBlock_128_5',
-                          'S_ResBlock_64_1',      'S_ResBlock_64_3',     'S_ResBlock_64_5',
+        self.func_type = ['S_ConvBlock_32_3',   'S_ConvBlock_32_5',
+                          'S_ConvBlock_128_3',   'S_ConvBlock_128_5',
+                          'S_ConvBlock_64_3',    'S_ConvBlock_64_5',
                           'Concat', 'Sum',
                           'Max_Pool', 'Avg_Pool']
-                          
+
         self.func_in_num = [1, 1, 1,
-                            1, 1, 1,
-                            1, 1, 1,
-                            1, 1, 1,
-                            1, 1, 1,
                             1, 1, 1,
                             2, 2,
                             1, 1]
@@ -95,4 +94,5 @@ class CgpInfoConvSet(object):
 
         self.func_type_num = len(self.func_type)
         self.out_type_num = len(self.out_type)
-        self.max_in_num = np.max([np.max(self.func_in_num), np.max(self.out_in_num)])
+        self.max_in_num = np.max(
+            [np.max(self.func_in_num), np.max(self.out_in_num)])
