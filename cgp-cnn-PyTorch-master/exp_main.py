@@ -18,6 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--net_info_file', default='network_info.pickle', help='Network information file name')
     parser.add_argument('--log_file', default='./log_cgp.txt', help='Log file name')
     parser.add_argument('--mode', '-m', default='evolution', help='Mode (evolution / retrain / reevolution)')
+    # action='store_true' は引数が与えられた際に True に設定する機能
     parser.add_argument('--init', '-i', action='store_true')
     args = parser.parse_args()
 
@@ -29,9 +30,10 @@ if __name__ == '__main__':
             pickle.dump(network_info, f)
         # Evaluation function for CGP (training CNN and return validation accuracy)
         imgSize = 32
-        eval_f = CNNEvaluation(gpu_num=args.gpu_num, dataset='cifar10', verbose=True, epoch_num=50, batchsize=128, imgSize=imgSize)
+        eval_f = CNNEvaluation(gpu_num=args.gpu_num, dataset='cifar10', verbose=True, epoch_num=50, batchsize=20, imgSize=imgSize)
 
         # Execute evolution
+        # TODO: init とは？ → if True: 初期に畳み込み層のみをノードに割り当てる, else: それ以外も含めてランダム
         cgp = CGP(network_info, eval_f, lam=args.lam, imgSize=imgSize, init=args.init)
         cgp.modified_evolution(max_eval=250, mutation_rate=0.1, log_file=args.log_file)
 
@@ -48,7 +50,7 @@ if __name__ == '__main__':
         cgp.load_log(list(data.tail(1).values.flatten().astype(int)))  # Read the log at final generation
         print(cgp._log_data(net_info_type='active_only', start_time=0))
         # Retraining the network
-        temp = CNN_train('cifar10', validation=False, verbose=True, batchsize=128)
+        temp = CNN_train('cifar10', validation=False, verbose=True, batchsize=20)
         acc = temp(cgp.pop[0].active_net_list(), 0, epoch_num=500, out_model='retrained_net.model')
         print(acc)
 
@@ -60,10 +62,11 @@ if __name__ == '__main__':
     elif args.mode == 'reevolution':
         # restart evolution
         print('Restart Evolution')
-        imgSize = 64
+        # 元々は 64 であったが 32 に変更
+        imgSize = 32
         with open('network_info.pickle', mode='rb') as f:
             network_info = pickle.load(f)
-        eval_f = CNNEvaluation(gpu_num=args.gpu_num, dataset='cifar10', verbose=True, epoch_num=50, batchsize=128, imgSize=imgSize)
+        eval_f = CNNEvaluation(gpu_num=args.gpu_num, dataset='cifar10', verbose=True, epoch_num=50, batchsize=20, imgSize=imgSize)
         cgp = CGP(network_info, eval_f, lam=args.lam, imgSize=imgSize)
 
         data = pd.read_csv('./log_cgp.txt', header=None)
