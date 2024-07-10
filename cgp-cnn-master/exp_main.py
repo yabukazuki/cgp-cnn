@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
+sys.path.append("./tools")
+from tools.dataset_class import DataSet
+
 import argparse
 import pickle
 import pandas as pd
 
-from cgp import *
-from cgp_config import *
-from cnn_train import CNN_train
+from modules.cgp import *
+from modules.cgp_config import *
+from modules.cnn_train import CNN_train
 
 
 if __name__ == '__main__':
@@ -35,7 +39,7 @@ if __name__ == '__main__':
 
         # Evaluation function for CGP (training CNN and return validation accuracy)
         eval_f = CNNEvaluation(gpu_num=args.gpu_num, dataset='comic_one_input', valid_data_ratio=0.2, verbose=True,
-                               epoch_num=50, batchsize=16)
+                               epoch_num=50, batchsize=20)
 
         # Execute evolution
         cgp = CGP(network_info, eval_f, lam=args.lam)
@@ -55,7 +59,7 @@ if __name__ == '__main__':
         # Retraining the network
         temp = CNN_train('comic_one_input', is_valid=False, valid_data_ratio=0.2, verbose=True, search_space_obj=func_set[args.func_set]())
         # TODO: パラメータを合わせる
-        acc = temp(cgp.pop[0].active_net_list(), 0, epoch_num=100, batchsize=16, weight_decay=5e-4, eval_epoch_num=1,
+        acc = temp(cgp.pop[0].active_net_list(), 0, epoch_num=100, batchsize=20, weight_decay=5e-4, eval_epoch_num=1,
                    data_aug=True, out_model='retrained_net.model', init_model=None, retrain_mode=True)
         print(acc)
 

@@ -6,7 +6,8 @@ import numpy as np
 import random
 import csv
 
-from cnn_model import CGP2CNN
+from modules.cnn_model import CGP2CNN
+from modules.cgp_config import *
 
 import torch
 import torch.optim as optim
@@ -23,7 +24,47 @@ import seaborn as sns
 # __init__: load dataset
 # __call__: training the CNN defined by CGP list
 
+class CgpInfoConvSet(object):
+    def __init__(self, rows=5, cols=30, level_back=10, min_active_num=10, max_active_num=50):
+        # network configurations depending on the problem
+        self.input_num = 1
 
+        self.func_type = ['ConvBlock_32_3', 'ConvBlock_32_5',
+                          'ConvBlock_64_3', 'ConvBlock_64_5',
+                          'ConvBlock_128_3', 'ConvBlock_128_5',
+                          'pool_max', 'pool_ave',
+                          'concat', 'sum']
+        self.func_in_num = [1, 1,
+                            1, 1,
+                            1, 1,
+                            1, 1,
+                            2, 2]
+        
+        self.func_type_in_num = {}
+        for func_type, func_in_num in zip(self.func_type, self.func_in_num):
+            self.func_type_in_num[func_type] = func_in_num
+
+        self.out_num = 1
+        self.out_type = ['full_0']
+        self.out_in_num = [1]
+        
+        self.out_type_in_num = {}
+        for out_type, out_in_num in zip(self.out_type, self.out_in_num):
+            self.out_type_in_num[out_type] = out_in_num
+
+        # CGP network configuration
+        self.rows = rows
+        self.cols = cols
+        self.node_num = rows * cols
+        self.level_back = level_back
+        self.min_active_num = min_active_num
+        self.max_active_num = max_active_num
+
+        self.func_type_num = len(self.func_type)
+        self.out_type_num = len(self.out_type)
+        self.max_in_num = np.max(
+            [np.max(self.func_in_num), np.max(self.out_in_num)])
+        
 def fix_random_seed(seed: int):
     """再現性の確保
 
@@ -180,14 +221,15 @@ class CNN_train():
             print('\tepoch_num:', epoch_num)
             print('\tbatchsize:', batchsize)
 
-        device = "cuda:" + gpuID  # Make a specified GPU current
+        device = "cuda:" + str(gpuID)  # Make a specified GPU current
 
         if init_model is not None:
             if self.verbose:
                 print('\tLoad model from', init_model)
             model = torch.load(init_model)
         else:
-            model = CGP2CNN(cgp, self.n_class)
+            search_space_obj=CgpInfoConvSet()
+            model = CGP2CNN(cgp, self.n_class, device, rate_dropout=0.3, search_space_obj=search_space_obj)
         model.to(device)
 
         # モデルの点検 (例) と各層への入力チャネルや次元のサイズ設定
@@ -208,7 +250,7 @@ class CNN_train():
 
         criterion = nn.CrossEntropyLoss()
         # TODO: テスト実験における学習率の最適化
-        lr = 0.001 if not retrain_mode else 0.001
+        lr = 0.005 if not retrain_mode else 0.005
         optimizer = optim.AdamW(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08,
                                 weight_decay=weight_decay)
         scheduler = CosineAnnealingLR(

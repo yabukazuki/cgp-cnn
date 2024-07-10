@@ -3,9 +3,12 @@
 
 import csv
 import time
+import time
 import numpy as np
 
-from make_architect_figure import make_architect_figure
+import matplotlib.pyplot as plt
+
+from modules.make_architect_figure import make_architect_figure
 
 
 class Individual(object):
@@ -229,6 +232,7 @@ class CGP(object):
     #     - Mutate the best individual with neutral mutation (unchanging the active nodes)
     #         if the best individual is not updated.
     def modified_evolution(self, max_eval, mutation_rate, log_file):
+        start = time.time()
         with open(log_file, 'w') as fw:
             writer = csv.writer(fw, lineterminator='\n')
 
@@ -241,6 +245,7 @@ class CGP(object):
             self._evaluation([self.pop[0]], np.array([True]))
             print(self._log_data(net_info_type='active_only'))
 
+            fitnesses_gen = [self.pop[0].eval]
             while self.num_eval < max_eval:
                 self.num_gen += 1
 
@@ -269,10 +274,29 @@ class CGP(object):
                     self.pop[0].neutral_mutation(
                         mutation_rate)  # neutral mutation
 
-                # display and save log
-                print(self._log_data(net_info_type='active_only'))
-                writer.writerow(self._log_data(net_info_type='full'))
+                print()
+                print(self.pop[0].active_net_list())
+                print(f"fitness = {self.pop[0].eval}")
+                print(f"num_gen = {self.num_gen}")
+                print(f"num_eval = {self.num_eval}")
+                fitnesses_gen.append(self.pop[0].eval)
+                
+                plt.figure()
+                plt.plot(range(len(fitnesses_gen)),
+                        fitnesses_gen, color="blue")
+                plt.xlabel("Generation")
+                plt.ylabel("Fitness")
+                plt.grid(True)
+                # plt.legend(bbox_to_anchor=(1.05, 1),
+                #         loc='upper left', borderaxespad=0)
+                plt.savefig(f"fitnesses_gene.eps", bbox_inches="tight")
+                plt.close()
 
-                if self.num_eval % 50 == 0 or self.num_eval % 50 == 1:
-                    make_architect_figure(net_list_source=self.pop[0].active_net_list, out_file=f"best_indiv_{
-                                          self.num_eval}", search_space_obj=self.net_info)
+                with open(f"csv.result.d/fitnesses_gene.csv", 'w') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(list(range(len(fitnesses_gen))))
+                    writer.writerow(fitnesses_gen)
+                    
+                print(f"time = {(time.time()-start)/60.0} minutes")
+                print()
+                make_architect_figure(net_list_source=self.pop[0].active_net_list(), out_file=f"best_indiv", search_space_obj=self.net_info)
