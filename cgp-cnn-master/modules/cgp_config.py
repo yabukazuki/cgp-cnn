@@ -56,7 +56,7 @@ class CgpInfoConvSet(object):
                           'ConvBlock_64_3', 'ConvBlock_64_5',
                           'ConvBlock_128_3', 'ConvBlock_128_5',
                           'pool_max', 'pool_ave',
-                          'concat', 'sum']
+                          'sum', 'concat']
         self.func_in_num = [1, 1,
                             1, 1,
                             1, 1,
