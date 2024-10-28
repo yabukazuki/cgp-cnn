@@ -18,7 +18,7 @@ def cnn_eval(net, gpu_id, epoch_num, batchsize, dataset, valid_data_ratio, verbo
     train = cnn.CNN_train(dataset, is_valid=True,
                           valid_data_ratio=valid_data_ratio, verbose=verbose, search_space_obj=CgpInfoConvSet())
     evaluation = train(net, gpu_id, epoch_num=epoch_num, batchsize=batchsize, weight_decay=5e-4, eval_epoch_num=10,
-                       data_aug=True, out_model=None, init_model=None, retrain_mode=False)
+                       data_aug=False, out_model=None, init_model=None, retrain_mode=False)
     print('\tgpu_id:', gpu_id, ', eval:', evaluation)
     return evaluation
 
@@ -52,14 +52,14 @@ class CgpInfoConvSet(object):
         # network configurations depending on the problem
         self.input_num = 1
 
-        self.func_type = ['ConvBlock_32_3', 'ConvBlock_32_5',
-                          'ConvBlock_64_3', 'ConvBlock_64_5',
-                          'ConvBlock_128_3', 'ConvBlock_128_5',
+        self.func_type = ['ConvBlock_32_1', 'ConvBlock_32_3', 'ConvBlock_32_5',
+                          'ConvBlock_64_1', 'ConvBlock_64_3', 'ConvBlock_64_5',
+                          'ConvBlock_128_1', 'ConvBlock_128_3', 'ConvBlock_128_5',
                           'pool_max', 'pool_ave',
                           'sum', 'concat']
-        self.func_in_num = [1, 1,
-                            1, 1,
-                            1, 1,
+        self.func_in_num = [1, 1, 1,
+                            1, 1, 1,
+                            1, 1, 1,
                             1, 1,
                             2, 2]
         

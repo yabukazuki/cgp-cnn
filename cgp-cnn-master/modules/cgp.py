@@ -296,7 +296,12 @@ class CGP(object):
                     writer = csv.writer(f)
                     writer.writerow(list(range(len(fitnesses_gen))))
                     writer.writerow(fitnesses_gen)
-                    
+                
+                with open("experiment_memo.txt", "a") as f:
+                    f.write(f"fitness = {self.pop[0].eval}\n")
+                    f.write(f"num_gen = {self.num_gen}\n")
+                    f.write(f"num_eval = {self.num_eval}\n")
+                    f.write(f"time = {(time.time()-start)/60.0} minutes\n\n")
                 print(f"time = {(time.time()-start)/60.0} minutes")
                 print()
                 make_architect_figure(net_list_source=self.pop[0].active_net_list(), out_file=f"best_indiv", search_space_obj=self.net_info)

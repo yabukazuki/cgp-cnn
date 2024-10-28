@@ -15,6 +15,8 @@ import torch.nn as nn
 from torchvision import datasets
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
+from modules.extend_dataset import apply_augmentation_with_original32
+from modules.extend_dataset import apply_augmentation_with_original32_test
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 import pickle
@@ -29,14 +31,14 @@ class CgpInfoConvSet(object):
         # network configurations depending on the problem
         self.input_num = 1
 
-        self.func_type = ['ConvBlock_32_3', 'ConvBlock_32_5',
-                          'ConvBlock_64_3', 'ConvBlock_64_5',
-                          'ConvBlock_128_3', 'ConvBlock_128_5',
+        self.func_type = ['ConvBlock_32_1', 'ConvBlock_32_3', 'ConvBlock_32_5',
+                          'ConvBlock_64_1', 'ConvBlock_64_3', 'ConvBlock_64_5',
+                          'ConvBlock_128_1', 'ConvBlock_128_3', 'ConvBlock_128_5',
                           'pool_max', 'pool_ave',
-                          'concat', 'sum']
-        self.func_in_num = [1, 1,
-                            1, 1,
-                            1, 1,
+                          'sum', 'concat']
+        self.func_in_num = [1, 1, 1,
+                            1, 1, 1,
+                            1, 1, 1,
                             1, 1,
                             2, 2]
         
@@ -106,7 +108,7 @@ class CNN_train():
         if "comic" in dataset_name:
             if dataset_name == "comic_one_input":
                 self.n_class = 5
-                self.channel = 3
+                self.channel = 1
                 self.pad_size = 4
 
                 root = "./data"
@@ -117,8 +119,21 @@ class CNN_train():
                 with open(filename_test, mode="rb") as f_test:
                     test = pickle.load(f_test)
                 if is_valid:
-                    self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(torch.tensor(train.data.transpose(0, 3, 1, 2)/255.0, dtype=torch.float32), torch.tensor(train.targets, dtype=torch.long), test_size=valid_data_ratio, random_state=0,
-                                                                                            shuffle=True, stratify=train.targets)
+                    self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(train.data, train.targets, test_size=valid_data_ratio, random_state=0,
+                                                                                        shuffle=True, stratify=train.targets)
+                    self.x_train, self.y_train = apply_augmentation_with_original32(
+                        self.x_train, self.y_train, num_times=4)
+                    self.x_test = torch.tensor(apply_augmentation_with_original32_test(self.x_test).transpose(
+                        0, 3, 1, 2), dtype=torch.float32)
+                    # 次元移動
+                    # tensor にする
+                    self.x_train = torch.tensor(self.x_train.transpose(
+                        0, 3, 1, 2), dtype=torch.float32)
+                    self.y_train = torch.tensor(
+                        self.y_train, dtype=torch.long)
+
+                    self.y_test = torch.tensor(
+                        self.y_test, dtype=torch.long)
                 else:
                     self.x_train, _, self.y_train, _ = train_test_split(torch.tensor(train.data.transpose(0, 3, 1, 2)/255.0, dtype=torch.float32), torch.tensor(train.targets, dtype=torch.long), test_size=valid_data_ratio, random_state=0,
                                                                         shuffle=True, stratify=train.targets)
@@ -198,15 +213,18 @@ class CNN_train():
                 self.x_test, self.y_test = torch.tensor(test.data.transpose(
                     0, 3, 1, 2)/255.0, dtype=torch.float32), torch.tensor(test.targets, dtype=torch.long)
 
-        # TODO: 平均値を引く前処理の導入
-        # preprocessing (subtraction of mean pixel values)
-        # x_mean = 0
-        # for x in self.x_train:
-        #     x_mean += x
-        # x_mean /= len(self.x_train)
-        # self.x_train -= x_mean
-        # self.x_test -= x_mean
-
+        # 標準化
+        if self.channel == 1:
+            image_list = []
+            for x in self.x_train:
+                image_list.append(x)
+            all_images = torch.stack(image_list)
+            mean = all_images.mean()
+            std = all_images.std()
+            self.x_train = (self.x_train - mean) / std
+            self.x_test = (self.x_test - mean) / std
+            print(f'Mean: {mean.item()}, Std: {std.item()}')
+        
         self.train_data_num = len(self.x_train)
         self.test_data_num = len(self.x_test)
         if self.verbose:
@@ -253,8 +271,8 @@ class CNN_train():
         lr = 0.005 if not retrain_mode else 0.005
         optimizer = optim.AdamW(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-08,
                                 weight_decay=weight_decay)
-        scheduler = CosineAnnealingLR(
-            optimizer, T_max=epoch_num, eta_min=lr*0.5)
+        # scheduler = StepLR(
+        #         optimizer, step_size=self.crossover_epoch, gamma=0.80, verbose=True)
 
         train_accuracies, train_losses = np.zeros(
             epoch_num), np.zeros(epoch_num)
@@ -271,8 +289,7 @@ class CNN_train():
             train_accuracy = train_loss = 0
             start = time.time()
             for i in range(0, self.train_data_num, batchsize):
-                xx_train = self.data_augmentation(
-                    self.x_train[perm[i:i + batchsize]]) if data_aug else self.x_train[perm[i:i + batchsize]]
+                xx_train = self.x_train[perm[i:i + batchsize]]
                 if self.search_space_obj.input_num > 1:
                     xx_train = torch.transpose(xx_train, 1, 0)
                 x = xx_train.to(device)
@@ -288,8 +305,8 @@ class CNN_train():
                 _, predict = torch.max(outputs.data, 1)
                 train_accuracy += float((predict == t).sum().item())
 
-            if retrain_mode:
-                scheduler.step()
+            # if retrain_mode:
+            #     scheduler.step()
 
             elapsed_time = time.time() - start
             throughput = self.train_data_num / elapsed_time
@@ -451,26 +468,3 @@ class CNN_train():
             test_accuracy += float((predict == t).sum().item())
         return test_accuracy, test_loss
 
-    def data_augmentation(self, x_train):
-        _, c, h, w = x_train.shape
-        pad_h = h + 2 * self.pad_size
-        pad_w = w + 2 * self.pad_size
-        aug_data = torch.zeros_like(x_train, dtype=torch.float32)
-
-        for i, x in enumerate(x_train):
-            # パディング画像の作成
-            pad_img = torch.zeros((c, pad_h, pad_w), dtype=torch.float32)
-            pad_img[:, self.pad_size:h+self.pad_size,
-                    self.pad_size:w+self.pad_size] = x
-
-            # ホリゾンタルフリップ and ランダムクロップ
-            top = np.random.randint(0, pad_h - h + 1)
-            left = np.random.randint(0, pad_w - w + 1)
-            bottom = top + h
-            right = left + w
-            if np.random.randint(0, 2):
-                pad_img = torch.flip(pad_img, dims=[2])
-
-            aug_data[i] = pad_img[:, top:bottom, left:right]
-
-        return aug_data

@@ -54,7 +54,7 @@ class MyConv(nn.Module):
                 in_channels=in_channels, out_channels=self.out_channels,
                 kernel_size=self.kernel_size, stride=1, padding=self.padding)
 
-            init.kaiming_uniform_(
+            init.kaiming_normal_(
                 self.conv.weight, mode='fan_in', nonlinearity='relu')
             nn.init.constant_(self.conv.bias, 0.0)
 
@@ -299,7 +299,7 @@ class MyFullyConnectedBlock(nn.Module):
         else:
             self.in_features = x.shape[1]
             self.linear = nn.Linear(self.in_features, self.out_features)
-            init.kaiming_uniform_(self.linear.weight,
+            init.kaiming_normal_(self.linear.weight,
                                   mode='fan_in', nonlinearity='relu')
             init.zeros_(self.linear.bias)
             self.linear.to(self.device)
