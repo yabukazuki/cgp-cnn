@@ -74,14 +74,14 @@ def apply_augmentation_with_original224(data, targets, num_times):
     # 元のデータを追加
     for img in data:
         augmented_data.append(
-            resize224(image=np.repeat(img, 3, axis=-1))['image'])
+            resize224(image=img)['image'])
     augmented_targets.extend(targets)
 
     for img, target in zip(data, targets):
         for _ in range(num_times):
             # 拡張を適用
             augmented_data.append(
-                resize224(image=transform224(image=np.repeat(img, 3, axis=-1))['image'])['image'])
+                resize224(image=transform224(image=img)['image'])['image'])
             augmented_targets.append(target)
 
     return np.array(augmented_data), np.array(augmented_targets)
@@ -94,6 +94,6 @@ def apply_augmentation_with_original224_test(data):
     # 元のデータを追加
     for img in data:
         augmented_data.append(
-            resize224(image=np.repeat(img, 3, axis=-1))['image'])
+            resize224(image=img)['image'])
 
     return np.array(augmented_data)

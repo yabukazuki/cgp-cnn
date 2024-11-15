@@ -6,6 +6,7 @@ import numpy as np
 
 import modules.cnn_train as cnn
 
+
 # wrapper function for multiprocessing
 def arg_wrapper_mp(args):
     return args[0](*args[1:])
@@ -52,17 +53,13 @@ class CgpInfoConvSet(object):
         # network configurations depending on the problem
         self.input_num = 1
 
-        self.func_type = ['ConvBlock_32_1', 'ConvBlock_32_3', 'ConvBlock_32_5',
-                          'ConvBlock_64_1', 'ConvBlock_64_3', 'ConvBlock_64_5',
-                          'ConvBlock_128_1', 'ConvBlock_128_3', 'ConvBlock_128_5',
-                          'pool_max', 'pool_ave',
-                          'sum', 'concat']
-        self.func_in_num = [1, 1, 1,
-                            1, 1, 1,
-                            1, 1, 1,
-                            1, 1,
-                            2, 2]
-        
+        self.func_type = [f"ConvBlock_{2**out_features}_{kernel_size}" for out_features in range(
+            5, 8, 1) for kernel_size in [1, 3, 5]]
+        self.func_type += ['pool_max', 'pool_ave',
+                           'sum', 'concat']
+        self.func_in_num = [1 for _ in range(5, 8, 1) for _ in [1, 3, 5]]
+        self.func_in_num += [1, 1, 2, 2]
+
         self.func_type_in_num = {}
         for func_type, func_in_num in zip(self.func_type, self.func_in_num):
             self.func_type_in_num[func_type] = func_in_num
@@ -70,7 +67,7 @@ class CgpInfoConvSet(object):
         self.out_num = 1
         self.out_type = ['full_0']
         self.out_in_num = [1]
-        
+
         self.out_type_in_num = {}
         for out_type, out_in_num in zip(self.out_type, self.out_in_num):
             self.out_type_in_num[out_type] = out_in_num
@@ -104,7 +101,7 @@ class CgpInfoResSet(object):
                             1, 1,
                             1, 1,
                             2, 2]
-        
+
         self.func_type_in_num = {}
         for func_type, func_in_num in zip(self.func_type, self.func_in_num):
             self.func_type_in_num[func_type] = func_in_num
@@ -112,7 +109,7 @@ class CgpInfoResSet(object):
         self.out_num = 1
         self.out_type = ['full_0']
         self.out_in_num = [1]
-        
+
         self.out_type_in_num = {}
         for out_type, out_in_num in zip(self.out_type, self.out_in_num):
             self.out_type_in_num[out_type] = out_in_num
@@ -129,5 +126,3 @@ class CgpInfoResSet(object):
         self.out_type_num = len(self.out_type)
         self.max_in_num = np.max(
             [np.max(self.func_in_num), np.max(self.out_in_num)])
-
-

@@ -280,10 +280,10 @@ class CGP(object):
                 print(f"num_gen = {self.num_gen}")
                 print(f"num_eval = {self.num_eval}")
                 fitnesses_gen.append(self.pop[0].eval)
-                
+
                 plt.figure()
                 plt.plot(range(len(fitnesses_gen)),
-                        fitnesses_gen, color="blue")
+                         fitnesses_gen, color="blue")
                 plt.xlabel("Generation")
                 plt.ylabel("Fitness")
                 plt.grid(True)
@@ -296,7 +296,7 @@ class CGP(object):
                     writer = csv.writer(f)
                     writer.writerow(list(range(len(fitnesses_gen))))
                     writer.writerow(fitnesses_gen)
-                
+
                 with open("experiment_memo.txt", "a") as f:
                     f.write(f"fitness = {self.pop[0].eval}\n")
                     f.write(f"num_gen = {self.num_gen}\n")
@@ -304,4 +304,5 @@ class CGP(object):
                     f.write(f"time = {(time.time()-start)/60.0} minutes\n\n")
                 print(f"time = {(time.time()-start)/60.0} minutes")
                 print()
-                make_architect_figure(net_list_source=self.pop[0].active_net_list(), out_file=f"best_indiv", search_space_obj=self.net_info)
+                make_architect_figure(net_list_source=self.pop[0].active_net_list(
+                ), out_file=f"best_indiv", search_space_obj=self.net_info)

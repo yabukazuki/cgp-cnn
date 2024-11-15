@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # --- Optimization of the CNN architecture ---
     if args.mode == 'evolution':
         # Create CGP configuration and save network information
-        network_info = func_set[args.func_set](rows=5, cols=30, level_back=10, min_active_num=10, max_active_num=50)
+        network_info = func_set[args.func_set](rows=5, cols=30, level_back=10, min_active_num=3, max_active_num=50)
         with open(args.net_info_file, mode='wb') as f:
             pickle.dump(network_info, f)
 
