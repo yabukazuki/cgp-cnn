@@ -7,8 +7,7 @@ import random
 import csv
 
 from modules.cnn_model import CGP2CNN
-from modules.cgp_config import CgpInfoConvSet
-from modules.fix_random_seed import fix_random_seed
+
 
 import torch
 import torch.optim as optim
@@ -186,6 +185,7 @@ class CNN_train():
                 print('\tLoad model from', init_model)
             model = torch.load(init_model)
         else:
+            from modules.cgp_config import CgpInfoConvSet
             search_space_obj = CgpInfoConvSet()
             model = CGP2CNN(cgp, self.n_class, device,
                             rate_dropout=0.3, search_space_obj=search_space_obj)
@@ -219,7 +219,7 @@ class CNN_train():
             epoch_num), np.zeros(epoch_num)
         test_accuracies, test_losses = np.zeros(
             epoch_num), np.zeros(epoch_num)
-
+        from modules.fix_random_seed import fix_random_seed
         fix_random_seed(0)  # 個体ごとに 1 epoch 目に訓練に用いるデータの順番 (perm) を同じにするため
 
         for epoch in range(1, epoch_num+1, 1):
