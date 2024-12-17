@@ -3,7 +3,6 @@
 
 import time
 import numpy as np
-import random
 import csv
 
 from modules.cnn_model import CGP2CNN
@@ -16,7 +15,6 @@ from torchvision import datasets
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from modules.extend_dataset import apply_augmentation_with_original32
-from modules.extend_dataset import apply_augmentation_with_original32_test
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 import pickle
@@ -47,7 +45,7 @@ class CNN_train():
                 self.channel = 3
                 self.pad_size = 4
 
-                root = "./data"
+                root = "/var/www/data"
                 filename_train = root + "/4koma_comic/train"
                 filename_test = root + "/4koma_comic/test"
                 with open(filename_train, mode="rb") as f_train:
@@ -59,20 +57,19 @@ class CNN_train():
                                                                                             shuffle=True, stratify=train.targets)
                     self.x_train, self.y_train = apply_augmentation_with_original32(
                         self.x_train, self.y_train, num_times=4)
-                    self.x_test = torch.tensor(apply_augmentation_with_original32_test(self.x_test).transpose(
+                    self.x_test = self.x_test/255.0
+                    self.x_test = torch.tensor(self.x_test.transpose(
                         0, 3, 1, 2), dtype=torch.float32)
 
-                    self.y_test = torch.tensor(
-                        self.y_test, dtype=torch.long)
                 else:
                     self.x_train, _, self.y_train, _ = train_test_split(train.data, train.targets, test_size=valid_data_ratio, random_state=0,
                                                                         shuffle=True, stratify=train.targets)
                     self.x_train, self.y_train = apply_augmentation_with_original32(
                         self.x_train, self.y_train, num_times=4)
-                    self.x_test = torch.tensor(apply_augmentation_with_original32_test(test.data).transpose(
+                    self.x_test = test.data/255.0
+                    self.x_test = torch.tensor(self.x_test.transpose(
                         0, 3, 1, 2), dtype=torch.float32)
-                    self.y_test = torch.tensor(
-                        test.targets, dtype=torch.long)
+                    self.y_test = test.targets
 
                 # 次元移動
                 # tensor にする
@@ -80,6 +77,9 @@ class CNN_train():
                     0, 3, 1, 2), dtype=torch.float32)
                 self.y_train = torch.tensor(
                     self.y_train, dtype=torch.long)
+
+                self.y_test = torch.tensor(
+                        self.y_test, dtype=torch.long)
 
             elif dataset_name == "comic_two_inputs":
                 self.n_class = 2
@@ -158,7 +158,8 @@ class CNN_train():
         # RGBチャンネルごとの平均と標準偏差を計算
         mean = self.x_train.mean(dim=[0, 2, 3])  # 各チャネルの平均を計算
         std = self.x_train.std(dim=[0, 2, 3])    # 各チャネルの標準偏差を計算
-        
+        print(f'Mean: {mean}, Std: {std}')
+
         self.x_train = (
             self.x_train - mean[None, :, None, None]) / std[None, :, None, None]
         self.x_test = (
@@ -256,7 +257,7 @@ class CNN_train():
             train_accuracies[epoch - 1] = train_accuracy / self.train_data_num
 
             test_accuracy, test_loss = self.__test(
-                model, batchsize=512, device=device)
+                model, batchsize=128, device=device)
             test_losses[epoch - 1] = test_loss / self.test_data_num
             test_accuracies[epoch - 1] = test_accuracy / self.test_data_num
 
@@ -265,6 +266,8 @@ class CNN_train():
                     train_losses[epoch - 1], train_accuracies[epoch - 1], elapsed_time, throughput, model.param_num))
                 print('\ttest mean loss={}, test accuracy={}, time={}, throughput={} images/sec, paramNum={}'.format(
                     test_losses[epoch - 1], test_accuracies[epoch - 1], elapsed_time, throughput, model.param_num))
+
+        fix_random_seed(seed=int(time.time()))
 
         # test_accuracy, test_loss = self.__test(model, batchsize=512, device=device)
         if out_model is not None:

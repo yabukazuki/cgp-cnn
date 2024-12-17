@@ -2,20 +2,21 @@
 # -*- coding: utf-8 -*-
 
 import sys
-sys.path.append("./tools")
+sys.path.append("/var/www/tools")
 from tools.dataset_class import DataSet
 
 import argparse
 import pickle
 import pandas as pd
+import os
+import torch
 
 from modules.cgp import *
 from modules.cgp_config import *
 from modules.cnn_train import CNN_train
 
 
-if __name__ == '__main__':
-
+def main():
     func_set = {
         'ConvSet': CgpInfoConvSet,
         'ResSet': CgpInfoResSet,
@@ -33,7 +34,7 @@ if __name__ == '__main__':
     # --- Optimization of the CNN architecture ---
     if args.mode == 'evolution':
         # Create CGP configuration and save network information
-        network_info = func_set[args.func_set](rows=5, cols=30, level_back=10, min_active_num=3, max_active_num=50)
+        network_info = func_set[args.func_set](rows=5, cols=40, level_back=10, min_active_num=3, max_active_num=50)
         with open(args.net_info_file, mode='wb') as f:
             pickle.dump(network_info, f)
 
@@ -43,7 +44,7 @@ if __name__ == '__main__':
 
         # Execute evolution
         cgp = CGP(network_info, eval_f, lam=args.lam)
-        cgp.modified_evolution(max_eval=50000, mutation_rate=0.05, log_file=args.log_file)
+        return cgp.modified_evolution(max_eval=50000, mutation_rate=0.05, log_file=args.log_file)
 
     # --- Retraining evolved architecture ---
     elif args.mode == 'retrain':
@@ -65,3 +66,26 @@ if __name__ == '__main__':
 
     else:
         print('Undefined mode.')
+
+if __name__ == '__main__':
+    n = 3 # 独立 n 回試行
+    test_accuracies = []
+    file_memory = "experiment_memo"
+    for i in range(n):
+        directory_path = f"/var/www/outputs_{i}"
+        os.makedirs(directory_path, exist_ok=True)
+        os.chdir(directory_path)
+
+        # 出力ディレクトリの確認・作成
+        dir_path = f"/var/www/outputs_{i}/csv_results"
+        os.makedirs(dir_path, exist_ok=True)
+        os.chmod(dir_path, 0o777)
+        print(f"ディレクトリ '{dir_path}' を作成しました。")
+
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        print(f"{device} で実験")
+        best_individual = main()
+        with open(f"{file_memory}.txt", "a") as f:
+            f.write(f"gene: {best_individual.gene}\n")
+            f.write(f"gene: {best_individual.active_net_list()}\n")
+            f.write(f"eval: {best_individual.eval}\n")

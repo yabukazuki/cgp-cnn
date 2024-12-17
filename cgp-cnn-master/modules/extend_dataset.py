@@ -4,6 +4,7 @@
 from modules.fix_random_seed import fix_random_seed
 import albumentations as A
 import numpy as np
+import time
 
 # 変換の定義
 transform32 = A.Compose([
@@ -50,20 +51,9 @@ def apply_augmentation_with_original32(data, targets, num_times):
             augmented_data.append(
                 resize32(image=transform32(image=img)['image'])['image'])
             augmented_targets.append(target)
+    fix_random_seed(seed=int(time.time()))
 
     return np.array(augmented_data), np.array(augmented_targets)
-
-
-def apply_augmentation_with_original32_test(data):
-    fix_random_seed(0)
-    augmented_data = []
-
-    # 元のデータを追加
-    for img in data:
-        augmented_data.append(
-            resize32(image=img)['image'])
-
-    return np.array(augmented_data)
 
 
 def apply_augmentation_with_original224(data, targets, num_times):
@@ -83,6 +73,7 @@ def apply_augmentation_with_original224(data, targets, num_times):
             augmented_data.append(
                 resize224(image=transform224(image=img)['image'])['image'])
             augmented_targets.append(target)
+    fix_random_seed(seed=int(time.time()))
 
     return np.array(augmented_data), np.array(augmented_targets)
 
@@ -95,5 +86,6 @@ def apply_augmentation_with_original224_test(data):
     for img in data:
         augmented_data.append(
             resize224(image=img)['image'])
+    fix_random_seed(seed=int(time.time()))
 
     return np.array(augmented_data)

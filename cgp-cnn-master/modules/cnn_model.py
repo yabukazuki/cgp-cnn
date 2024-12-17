@@ -381,11 +381,11 @@ class CGP2CNN(nn.Module):
             elif 'sum' in name:
                 in_data = [self.outputs[self.cgp[nodeID][1]],
                            self.outputs[self.cgp[nodeID][2]]]
-                # 画像サイズの調整
-                in_data = adjust_image_map_size(in_data=in_data)
                 # チャネルサイズの調整
                 in_data = adjust_image_channel_size(
                     in_data=in_data, device=self.device)
+                # 画像サイズの調整
+                in_data = adjust_image_map_size(in_data=in_data)
                 self.outputs[nodeID] = in_data[0] + in_data[1]
             elif 'full' in name:
                 in_data = [self.outputs[self.cgp[nodeID][j+1]]

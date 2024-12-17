@@ -18,7 +18,7 @@ def cnn_eval(net, gpu_id, epoch_num, batchsize, dataset, valid_data_ratio, verbo
     print('\tgpu_id:', gpu_id, ',', net)
     train = cnn.CNN_train(dataset, is_valid=True,
                           valid_data_ratio=valid_data_ratio, verbose=verbose, search_space_obj=CgpInfoConvSet())
-    evaluation = train(net, gpu_id, epoch_num=epoch_num, batchsize=batchsize, weight_decay=5e-4, eval_epoch_num=10,
+    evaluation = train(net, gpu_id, epoch_num=epoch_num, batchsize=batchsize, weight_decay=5e-4, eval_epoch_num=50,
                        data_aug=False, out_model=None, init_model=None, retrain_mode=False)
     print('\tgpu_id:', gpu_id, ', eval:', evaluation)
     return evaluation

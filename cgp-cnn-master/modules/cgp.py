@@ -246,7 +246,7 @@ class CGP(object):
             print(self._log_data(net_info_type='active_only'))
 
             fitnesses_gen = [self.pop[0].eval]
-            while self.num_eval < max_eval:
+            while self.num_eval < max_eval and self.num_gen < 200:
                 self.num_gen += 1
 
                 # reproduction
@@ -306,3 +306,4 @@ class CGP(object):
                 print()
                 make_architect_figure(net_list_source=self.pop[0].active_net_list(
                 ), out_file=f"best_indiv", search_space_obj=self.net_info)
+            return self.pop[0]

@@ -25,8 +25,6 @@ def make_architect_figure(net_list_source: list, out_file: str, search_space_obj
         "pool": "pink",
         "sum": "green",
         "concat": "lightyellow",
-        "skipconcatAuxiliary": "white",
-        "skipconcatNonAuxiliary": "white"
     }
 
     for i, layer in enumerate(net_list):
@@ -44,7 +42,7 @@ def make_architect_figure(net_list_source: list, out_file: str, search_space_obj
                 out_channels = layer[0].split('_')[1]
                 kernel_size = f"{layer[0].split('_')[2]} ✕ {layer[0].split('_')[2]}"
                 # label = f"{{ ReLU | Batch Norm | Dropout (0.3) | Convolution Block ({kernel_size}, {out_channels}) }}"
-                label = f"Convolution Block\n kernel size: {kernel_size}\n Out ch: {out_channels}"
+                label = f"Convolution Block\n Kernel size: {kernel_size}\n Out ch: {out_channels}"
             elif layer[0].startswith("pool"):
                 label = f"Pooling\n {layer[0].split('_')[1]}"
             elif layer[0].startswith("sum"):
@@ -55,8 +53,12 @@ def make_architect_figure(net_list_source: list, out_file: str, search_space_obj
                 label = "Input"
             elif layer[0].startswith("skipconcatNonAuxiliary"):
                 label = "Concatenation\n crossover point"
+            elif layer[0].startswith("crossover"):
+                label = f"Crossover point {layer[0].split('_')[1]}"
+            elif layer[0].startswith("pointwise"):
+                label = f"Convolution Block\n Kernel size: 1 ✕ 1"
             elif layer[0].startswith("full"):
-                label = "Output"
+                label = "Fully\n connected"
             else:
                 label = layer[0]
         dot.node(layer_name, label=label, shape=shape, style="filled", fillcolor=color, color="black")
@@ -73,6 +75,11 @@ def make_architect_figure(net_list_source: list, out_file: str, search_space_obj
         elif "skipconcatNonAuxiliary" in layer[0]:
             for i in range(2):
                 dot.edge(net_list[layer[i+1]][0], layer[0], label="")
+        elif "crossover" in layer[0]:
+            dot.edge(net_list[layer[1]][0], layer[0], label="")
+        elif "pointwise" in layer[0]:
+            dot.edge(net_list[layer[1]][0], layer[0], label="")
+            dot.edge(net_list[layer[2]][0], layer[0], label="")
         else:
             for i in range(search_space_obj.func_type_in_num[layer[0].split("__")[0]]):
                 dot.edge(net_list[layer[i+1]][0], layer[0], label="")
