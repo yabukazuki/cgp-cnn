@@ -292,7 +292,7 @@ class CGP(object):
                 plt.savefig(f"fitnesses_gene.eps", bbox_inches="tight")
                 plt.close()
 
-                with open(f"csv.result.d/fitnesses_gene.csv", 'w') as f:
+                with open(f"csv_results/fitnesses_gene.csv", 'w') as f:
                     writer = csv.writer(f)
                     writer.writerow(list(range(len(fitnesses_gen))))
                     writer.writerow(fitnesses_gen)

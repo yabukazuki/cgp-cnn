@@ -10,6 +10,7 @@ import pickle
 import pandas as pd
 import os
 import torch
+import multiprocessing
 
 from modules.cgp import *
 from modules.cgp_config import *
@@ -44,7 +45,7 @@ def main():
 
         # Execute evolution
         cgp = CGP(network_info, eval_f, lam=args.lam)
-        return cgp.modified_evolution(max_eval=50000, mutation_rate=0.05, log_file=args.log_file)
+        return cgp.modified_evolution(max_eval=2000000, mutation_rate=0.05, log_file=args.log_file)
 
     # --- Retraining evolved architecture ---
     elif args.mode == 'retrain':
@@ -71,6 +72,8 @@ if __name__ == '__main__':
     n = 3 # 独立 n 回試行
     test_accuracies = []
     file_memory = "experiment_memo"
+    multiprocessing.set_start_method('spawn')
+
     for i in range(n):
         directory_path = f"/var/www/outputs_{i}"
         os.makedirs(directory_path, exist_ok=True)

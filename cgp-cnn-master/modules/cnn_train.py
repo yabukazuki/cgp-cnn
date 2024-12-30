@@ -274,7 +274,7 @@ class CNN_train():
             model.to("cpu")
             torch.save(model, out_model)
         if retrain_mode:
-            CSV_SAVE_DIR = "csv.result.d"
+            CSV_SAVE_DIR = "csv_results"
             # ロスの推移
             plt.figure()
             plt.plot(range(1, len(train_losses)+1, 1),
